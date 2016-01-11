@@ -11,6 +11,7 @@ and open the template in the editor.
     </head>
     <body>
         <?php
+        //if the board isn't set, we initialize it to be empty
         if(!isset($_GET['board'])) {
             $position = "---------";
         }
@@ -18,9 +19,10 @@ and open the template in the editor.
             $position = $_GET['board'];
         }
         
-        $squares = str_split($position);
         //main game logic
+        $squares = str_split($position);
         $game = new Game($squares);
+        //check for winners
         if ($game->winner('x')) {
             echo 'You win. Lucky guesses!';
         }
@@ -28,24 +30,34 @@ and open the template in the editor.
             echo 'I win. Muahahahaha';
         }
         else {
-            echo 'No winner yet, but you are losing.';
+            //make a move. if the computer wins, end here!
+            //else display the game and continue
+            $game->move();
+            if( $game->winner('o')) {
+                echo 'I win. Muahahahaha';
+            }
+            else {
+                $game->display();
+            }
         }
         
+        //game class!
         class Game {
             var $posi;
+            var $newposi;
             var $result;
-            function _construct($squares) {
+            //constructor for the Game
+            function __construct($squares) {
                 $this->posi = $squares;
             }
             
+            //my winner function
             function winner($token) {
                 //check cols/////////
-                echo $this->posi[0];
                 for($row=0;$row<3;$row++) {
                     $result = true;
                     for($col=0;$col<3;$col++) {
                         if ($this->posi[3*$row+$col] != $token) {
-                            echo $this->posi[3*$row+$col];
                             $result=false;
                         }
                     }
@@ -83,6 +95,48 @@ and open the template in the editor.
                     $result = true;
                 }
                 return $result;
+            }
+            
+            //your display function
+            function display() {
+                echo '<table cols="3">';
+                echo '<tr>';
+                for ( $posi = 0; $posi < 9; $posi++ ) {
+                    echo $this->showcell( $posi );
+                    if( $posi % 3 == 2 )
+                        echo '</tr><tr>';
+                }
+                echo '</tr>';
+                echo '</table>';
+            }
+            
+            //your showcell function
+            function showcell( $cell ) {
+                $token = $this->posi[$cell];
+                if( $token <> '-' )
+                    return '<td>' . $token . '</td>';
+                $this->newposi = $this->posi;
+                $this->newposi[$cell] = 'x';
+                $move = implode( $this->newposi );
+                $url = '?board=' . $move;
+                return '<td><a href="' . $url . '">-</a></td>';
+            }
+            
+            function move() {
+                $game = null;
+                //if the board isn't empty, do this stuff
+                if( strcmp( implode( $this->posi ), '---------' ) != 0 ) {
+                    //set the positions and track the empty spaces
+                    $this->newposi = $this->posi;
+                    for ( $i = 0, $j = 0; $i < sizeof( $this->posi ); $i++ ) 
+                        if ( $this->posi[$i] == '-' )
+                            $game[$j++] = $i;
+                    //apply legal game logic
+                    if( sizeof( $game ) > 1 ) {
+                        $this->newposi[$game[array_rand( $game, 1 )]] = 'o';
+                        $this->posi = $this->newposi;
+                    }
+                }
             }
         }
         ?>
